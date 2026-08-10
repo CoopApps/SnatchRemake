@@ -7,13 +7,13 @@
 // Any scene that also needs plane B, sprites, palette fades, or dynamic
 // tile composition must get its own scene file, not go through this.
 
-import { Screen, type RgbFrame, type Palette } from '../render/screen.ts';
+import { Screen, type RgbFrame, type Palette, type SpritePlacement } from '../render/screen.ts';
 import { loadScene, wordToRgb } from '../assets/loader.ts';
 
 interface Cell { c: number; r: number; tile: number; pal: number; hf: number; vf: number; pri?: number; }
 interface Layout {
   originCol: number; originRow: number;
-  planeA: Cell[]; planeB: Cell[]; sprites: unknown[];
+  planeA: Cell[]; planeB: Cell[]; sprites: SpritePlacement[];
   tileToDisc: Record<string, number>;    // for plane A tiles (main block)
   tileToDiscB?: Record<string, number>;  // for plane B tiles (B block)
 }
@@ -46,6 +46,17 @@ export function makePlaneAScene(id: string, checkpoints: number[]) {
         if (!tile) continue;
         screen.drawTile(tile, (layout.originCol + cell.c) * 8, (layout.originRow + cell.r) * 8,
           pals[cell.pal] ?? pals[0], { flipH: !!cell.hf, flipV: !!cell.vf });
+      }
+      // Sprite layer — hardware sprites over the background planes. Tiles come
+      // from the scene's disc-sourced sprite block 'S'; placements are the disc
+      // descriptor list (no captured SAT). Absent until a scene sources them.
+      const sprites = layout.sprites as SpritePlacement[] | undefined;
+      const sTiles = assets.tileBlocks?.['S'];
+      if (sprites && sprites.length && sTiles) {
+        for (const s of sprites) {
+          screen.drawSprite(sTiles, s.tileBase, s.x, s.y, pals[s.pal] ?? pals[0],
+            s.wTiles, s.hTiles, { flipH: s.flipH, flipV: s.flipV });
+        }
       }
       return screen.frame();
     },

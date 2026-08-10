@@ -48,5 +48,39 @@ export class Screen {
     }
   }
 
+  /**
+   * Draw one Genesis hardware sprite: a wTiles×hTiles block of 8×8 tiles, drawn
+   * OVER the background planes with palette-index 0 transparent. Sprite tiles are
+   * stored column-major in VRAM (consecutive indices run DOWN a column, then the
+   * next column) — the VDP's sprite tile order — so tile at (col,row) is
+   * `tiles[tileBase + col*hTiles + row]`. flipH/flipV mirror the whole sprite
+   * (both the cell order AND each tile), matching hardware. (px,py) is the
+   * top-left screen pixel of the sprite after any flip.
+   */
+  drawSprite(
+    tiles: Tile[], tileBase: number, px: number, py: number, pal: Palette,
+    wTiles: number, hTiles: number, opts: { flipH?: boolean; flipV?: boolean } = {},
+  ): void {
+    for (let col = 0; col < wTiles; col++) {
+      for (let row = 0; row < hTiles; row++) {
+        const tile = tiles[tileBase + col * hTiles + row];
+        if (!tile) continue;
+        const cellCol = opts.flipH ? wTiles - 1 - col : col;
+        const cellRow = opts.flipV ? hTiles - 1 - row : row;
+        this.drawTile(tile, px + cellCol * 8, py + cellRow * 8, pal, { flipH: opts.flipH, flipV: opts.flipV });
+      }
+    }
+  }
+
   frame(): RgbFrame { return { rgb: this.rgb, width: this.width, height: this.height }; }
+}
+
+/** One sprite placement in a scene, sourced from the disc's sprite descriptors. */
+export interface SpritePlacement {
+  tileBase: number;  // index into the scene's sprite tile block
+  x: number; y: number;
+  wTiles: number; hTiles: number;
+  pal: number;
+  flipH?: boolean; flipV?: boolean;
+  pri?: boolean;     // priority over background (z-order); false = behind priority-1 bg
 }
