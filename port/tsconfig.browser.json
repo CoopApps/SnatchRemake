@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "outDir": "../../port/dist",
+    "rootDir": "src",
+    "allowImportingTsExtensions": false,
+    "declaration": false,
+    "sourceMap": true,
+    "lib": ["ES2020", "DOM"]
+  },
+  "include": ["src/hardware/**/*", "src/port/**/*", "src/lib/**/*"],
+  "exclude": ["src/port/maincpu_ip.ts", "src/port/registry.ts"]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "snatch-remake",
+  "version": "0.1.0",
+  "description": "A true TypeScript port of Snatcher (Sega CD, 1994) — intro sequence rendered scene-by-scene from disc-decoded assets, no VRAM captures.",
+  "type": "module",
+  "scripts": {
+    "score": "tsx port/harness/run.ts",
+    "typecheck": "tsc -p port/tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsx": "^4.23.5",
+    "typescript": "^7.0.2"
+  }
+}

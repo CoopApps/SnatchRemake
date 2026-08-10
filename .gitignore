@@ -1,0 +1,27 @@
+# --- Dependencies / build output ---
+node_modules/
+*.log
+
+# --- Copyrighted game data — NEVER commit (regenerated locally from your own disc) ---
+# Decoded Konami tile graphics + disc-derived layout/palette data:
+port/game/assets/**/*.bin
+port/game/assets/**/*.json
+# Reference framebuffers used only for offline scoring (derived from the game):
+port/harness/targets/
+# Decompression cache (derived from the disc):
+port/build/.tile_blocks.json
+# Any VRAM/state capture — banned from the port by design:
+port/rendered/
+**/state.bin
+*.raw
+
+# --- Local render/debug artifacts (rendered game screens = Konami visuals) ---
+**/*.png
+**/_preview_*
+port/**/out/
+*.ppm
+
+# --- Disc-derived index/layout metadata (regenerated from disc) ---
+port/build/.lzss_index.json
+port/harness/konami_layout.json
+port/harness/*_layout.json
