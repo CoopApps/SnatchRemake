@@ -62,3 +62,50 @@ bits, `D5/D7` = position accumulators, `A0` = object struct (byte `+22` = palett
    scene layout, same category as the existing nametable origins.
 
 Tiles (step above) and the compositor (`Screen.drawSprite`) are already done.
+
+---
+
+## RESOLVED emitter + asset bundle (2026-08-11)
+
+After a long RE detour, the sprite emitter turned out to be **linear** — an earlier
+record-boundary error had scrambled it. The verified truth:
+
+**Descriptor record = 8 bytes, 4 big-endian words `[Yoff, basePos, attr, Xoff]`:**
+```
+Yoff.w    signed Y offset from object origin
+basePos.w high byte = VDP size nibble, low byte = link (0 in source)
+attr.w    palette<<13 | vflip<<12 | hflip<<11 | tile(11 bits)
+Xoff.w    signed X offset from object origin
+```
+**Emitter (`port/game/engine/cels.ts`):** `screenX = origin.x + Xoff`, `screenY = origin.y + Yoff`,
+drawn back-to-front (earlier records = display priority), column-major tiles, colour-0 transparent.
+Verified byte-exact against the intro portrait (Jamie origin (48,72), Gillian (112,72)).
+
+### The asset bundle (what the exporter emits, what the engine reads)
+
+A scene is **background + cels + schedule**, all disc-decoded:
+
+```
+<scene>/
+  palette.json          4 lines × 16 RGB  (decoded from disc 9-bit BGR; port/build/palette.ts)
+  palette_words.json    raw 0BGR words     (byte-exact round-trip verification)
+  layout.json           background nametable (existing)
+  tiles_main.bin        background tiles (existing)
+  cels/
+    <name>.tiles.bin    the cel's tile set (disc-decoded stream)
+    cels.json           [{ id, origin, tileset, palette, sprites:[{tile,pal,hf,vf,w,h,dx,dy}] }]
+  schedule.json         [{ tick, show:[celId...] }]  — from the recipe timeline
+  *.manifest.json       provenance: disc file + offsets (guardrails re-derive & verify)
+```
+
+Palettes are **disc-sourced**: the block that fills CRAM is raw on disc (portrait = DATA_D0
+`$377c0/$37680/$379c0/$37bc0`). The capture is used only to *identify* which disc palette /
+tiles / descriptor / frame — it contributes zero shipped bytes. Fades are engine-computed
+from disc base palettes, not stored per-step.
+
+### Cel extraction (build-time)
+
+`tools/export` sweeps the capture's sprite table across the whole scene, and for each
+descriptor list finds the frame it is displayed, snapshots which disc-stream tiles occupy
+its slots, and bakes the cel from **disc descriptor + disc tiles + disc palette**. Identical
+poses are deduped; talking is layered (base-face cel + separate mouth-overlay cel).
